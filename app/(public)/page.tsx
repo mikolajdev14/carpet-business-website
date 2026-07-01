@@ -17,7 +17,7 @@ export default function HomePage() {
 
   return (
     <div className="overflow-x-hidden">
-      <section className="relative min-h-screen overflow-hidden bg-radial-[at_50%_40%] from-[#ffe44c] via-[#fcd202] to-[#9e880d]">
+      <section className="relative min-h-screen overflow-hidden bg-[#050505]">
         <FloatingLines
           enabledWaves={["top", "middle", "bottom"]}
           // Array - specify line count per wave; Number - same count for all waves
@@ -135,23 +135,14 @@ export default function HomePage() {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 1, ease: "easeOut" }}
           className="absolute top-1/3 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 w-full"
-        >
-          <OrbitImages
-            images={images}
-            shape="ellipse"
-            radiusX={440}
-            radiusY={200}
-            rotation={-180}
-            duration={30}
-            itemSize={600}
-            responsive={true}
-            radius={80}
-            direction="normal"
-            fill
-            showPath={false}
-            paused={false}
-          />
-        </motion.div>
+        ></motion.div>
+        {/* geleria przykladowych dywanow */}
+      </section>
+      <section className="relative min-h-screen overflow-hidden bg-[#ffe44c]">
+        {/* SPOSOB REALIZACJI */}
+      </section>
+      <section className="relative min-h-screen overflow-hidden bg-white">
+        {/* kontakt - email, telefon itp*/}
       </section>
     </div>
   );
