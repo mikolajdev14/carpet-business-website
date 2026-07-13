@@ -6,6 +6,7 @@ import { DatePicker } from "./date-picker";
 import { CustomerForm } from "./customer-form";
 import { createClient } from "@/lib/supabase/client";
 import { bookingSchema } from "@/schema/booking";
+import { createCheckoutSession } from "./actions";
 
 export type Booking = {
   rugTypeId: string;
@@ -24,7 +25,9 @@ export default function ProductPage({
 }) {
   const { id } = use(params);
   const [blockedDays, setBlockedDays] = useState<Date[]>([]);
-  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitMessage, setSubmitMessage] = useState<string | undefined>(
+    undefined,
+  );
   const [booking, setBooking] = useState<Booking>({
     rugTypeId: id,
     pickedSize: null,
@@ -55,22 +58,22 @@ export default function ProductPage({
     };
   }, []);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result = bookingSchema.safeParse({
+    const response = await createCheckoutSession({
       ...booking,
       pickupDate: booking.pickupDate?.toISOString() ?? "",
     });
 
-    if (!result.success) {
-      const firstError = result.error.issues[0]?.message;
-      setSubmitMessage(firstError ?? "Sprawdź dane zamówienia.");
+    if (!response.success) {
+      setSubmitMessage(response.message);
       return;
     }
 
-    setSubmitMessage("Dane są gotowe do wysłania.");
-    console.log("dane: ", booking);
+    window.location.href = response.checkoutUrl!;
+
+    setSubmitMessage("Dane są gotowe");
   };
 
   return (
@@ -132,7 +135,7 @@ export default function ProductPage({
               type="submit"
               className="inline-flex h-11 items-center justify-center rounded-md bg-neutral-950 px-6 text-sm font-semibold text-[#ffe44c] transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
             >
-              Wyślij dane
+              Zapłać i zarezerwuj
             </button>
           </div>
         </form>
