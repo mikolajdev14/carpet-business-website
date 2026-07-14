@@ -41,41 +41,47 @@ export default async function AdminDashboardPage() {
   }
 
   const supabase = createAdminClient();
-  const [{ data: bookingRows, error: bookingsError }, { data: blockedRows, error: blockedError }] =
-    await Promise.all([
-      supabase
-        .from("bookings")
-        .select(
-          "id, rug_type_id, rug_size_id, rug_type_name, rug_size_label, price_cents, customer_name, customer_email, customer_phone, notes, booking_date, status, stripe_session_id, stripe_payment_intent_id, expires_at, created_at, updated_at, delivery_method, parcel_locker_code, delivery_address, reference_image_path",
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("blocked_dates").select("date").order("date"),
-    ]);
+  const [
+    { data: bookingRows, error: bookingsError },
+    { data: blockedRows, error: blockedError },
+  ] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select(
+        "id, rug_type_id, rug_size_id, rug_type_name, rug_size_label, price_cents, customer_name, customer_email, customer_phone, notes, booking_date, status, stripe_session_id, stripe_payment_intent_id, expires_at, created_at, updated_at, delivery_method, parcel_locker_code, delivery_address, reference_image_path",
+      )
+      .order("created_at", { ascending: false }),
+    supabase.from("blocked_dates").select("date").order("date"),
+  ]);
 
-  const bookings = (bookingRows as BookingRow[] | null)?.map((booking) => ({
-    id: Number(booking.id),
-    rugTypeId: booking.rug_type_id == null ? null : Number(booking.rug_type_id),
-    rugSizeId: booking.rug_size_id == null ? null : Number(booking.rug_size_id),
-    rugTypeName: booking.rug_type_name,
-    rugSizeLabel: booking.rug_size_label,
-    priceCents: booking.price_cents == null ? null : Number(booking.price_cents),
-    customerName: booking.customer_name,
-    customerEmail: booking.customer_email,
-    customerPhone: booking.customer_phone,
-    notes: booking.notes,
-    bookingDate: booking.booking_date,
-    status: booking.status ?? "paid",
-    stripeSessionId: booking.stripe_session_id,
-    stripePaymentIntentId: booking.stripe_payment_intent_id,
-    expiresAt: booking.expires_at,
-    createdAt: booking.created_at,
-    updatedAt: booking.updated_at,
-    deliveryMethod: booking.delivery_method,
-    parcelLockerCode: booking.parcel_locker_code,
-    deliveryAddress: booking.delivery_address,
-    referenceImagePath: booking.reference_image_path,
-    referenceImageUrl: null as string | null,
-  })) ?? [];
+  const bookings =
+    (bookingRows as BookingRow[] | null)?.map((booking) => ({
+      id: Number(booking.id),
+      rugTypeId:
+        booking.rug_type_id == null ? null : Number(booking.rug_type_id),
+      rugSizeId:
+        booking.rug_size_id == null ? null : Number(booking.rug_size_id),
+      rugTypeName: booking.rug_type_name,
+      rugSizeLabel: booking.rug_size_label,
+      priceCents:
+        booking.price_cents == null ? null : Number(booking.price_cents),
+      customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
+      customerPhone: booking.customer_phone,
+      notes: booking.notes,
+      bookingDate: booking.booking_date,
+      status: booking.status ?? "paid",
+      stripeSessionId: booking.stripe_session_id,
+      stripePaymentIntentId: booking.stripe_payment_intent_id,
+      expiresAt: booking.expires_at,
+      createdAt: booking.created_at,
+      updatedAt: booking.updated_at,
+      deliveryMethod: booking.delivery_method,
+      parcelLockerCode: booking.parcel_locker_code,
+      deliveryAddress: booking.delivery_address,
+      referenceImagePath: booking.reference_image_path,
+      referenceImageUrl: null as string | null,
+    })) ?? [];
 
   await Promise.all(
     bookings.map(async (booking) => {
@@ -94,8 +100,9 @@ export default async function AdminDashboardPage() {
   );
 
   const blockedDates =
-    blockedRows?.map((row) => row.date).filter((date): date is string => Boolean(date)) ??
-    [];
+    blockedRows
+      ?.map((row) => row.date)
+      .filter((date): date is string => Boolean(date)) ?? [];
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-950">
@@ -109,13 +116,15 @@ export default async function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-neutral-500 sm:block">{user.email}</span>
+            <span className="hidden text-sm text-neutral-500 sm:block">
+              {user.email}
+            </span>
             <LogoutButton />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1440px] px-5 py-6 sm:px-8 lg:px-10 lg:py-8">
+      <main className="mx-auto w-full max-w-[1440px] px-5 py-4 sm:px-8 lg:px-10 lg:py-5">
         {bookingsError || blockedError ? (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             Nie udało się pobrać wszystkich danych panelu. Sprawdź połączenie z

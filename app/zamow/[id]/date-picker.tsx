@@ -59,6 +59,11 @@ const css = `
 
 export const DatePicker = ({ setBooking, blockedDates }: DatePickerProps) => {
   const [selected, setSelected] = useState<Date | undefined>();
+  const [today] = useState(() => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+  });
 
   useEffect(() => {
     setBooking((prev) => ({ ...prev, pickupDate: selected ?? null }));
@@ -72,14 +77,14 @@ export const DatePicker = ({ setBooking, blockedDates }: DatePickerProps) => {
           Termin realizacji
         </p>
         <p className="mt-1 text-sm text-neutral-500">
-          Niedostępne dni są wyszarzone i przekreślone.
+          Dni wcześniejsze oraz zajęte są wyszarzone i przekreślone.
         </p>
       </div>
 
       <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:p-4">
         <DayPicker
           className="order-calendar"
-          disabled={blockedDates}
+          disabled={[{ before: today }, ...blockedDates]}
           mode="single"
           onSelect={setSelected}
           selected={selected}

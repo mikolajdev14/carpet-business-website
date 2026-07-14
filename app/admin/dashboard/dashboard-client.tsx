@@ -273,6 +273,8 @@ export default function AdminDashboardClient({
         }
 
         .admin-calendar .rdp-day_button {
+          width: 2.15rem;
+          height: 2.15rem;
           border-radius: 0.375rem;
         }
 
@@ -286,13 +288,13 @@ export default function AdminDashboardClient({
         }
       `}</style>
 
-      <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-neutral-500">
               Centrum zarządzania
             </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
               Zamówienia i terminy
             </h1>
           </div>
@@ -327,10 +329,12 @@ export default function AdminDashboardClient({
         </div>
 
         <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="flex flex-col gap-4 border-b border-neutral-200 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-neutral-950">Zamówienia</h2>
-              <p className="mt-1 text-sm text-neutral-500">
+              <h2 className="text-base font-semibold text-neutral-950">
+                Zamówienia
+              </h2>
+              <p className="mt-0.5 text-xs text-neutral-500">
                 {filteredBookings.length} z {bookings.length} rekordów
               </p>
             </div>
@@ -371,7 +375,7 @@ export default function AdminDashboardClient({
           </div>
 
           <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0 border-b border-neutral-200 lg:border-b-0 lg:border-r">
+            <div className="min-w-0 border-b border-neutral-200 lg:max-h-[600px] lg:overflow-y-auto lg:border-b-0 lg:border-r">
               {filteredBookings.length ? (
                 <div className="divide-y divide-neutral-200">
                   {filteredBookings.map((booking) => (
@@ -379,8 +383,10 @@ export default function AdminDashboardClient({
                       key={booking.id}
                       type="button"
                       onClick={() => setSelectedBookingId(booking.id)}
-                      className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-neutral-50 sm:px-6 ${
-                        selectedBookingId === booking.id ? "bg-neutral-50" : "bg-white"
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-50 sm:px-5 ${
+                        selectedBookingId === booking.id
+                          ? "bg-neutral-50"
+                          : "bg-white"
                       }`}
                     >
                       <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100 text-xs font-semibold text-neutral-500">
@@ -403,7 +409,8 @@ export default function AdminDashboardClient({
                           <StatusBadge status={booking.status} />
                         </div>
                         <p className="mt-1 truncate text-xs text-neutral-500">
-                          #{booking.id} · {booking.rugTypeName || "Dywan"} · {formatShortDate(booking.bookingDate)}
+                          #{booking.id} · {booking.rugTypeName || "Dywan"} ·{" "}
+                          {formatShortDate(booking.bookingDate)}
                         </p>
                       </div>
                       <div className="hidden text-right sm:block">
@@ -414,15 +421,27 @@ export default function AdminDashboardClient({
                           {getDeliveryLabel(booking.deliveryMethod)}
                         </p>
                       </div>
-                      <ChevronRight size={17} className="shrink-0 text-neutral-400" aria-hidden="true" />
+                      <ChevronRight
+                        size={17}
+                        className="shrink-0 text-neutral-400"
+                        aria-hidden="true"
+                      />
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="flex min-h-60 flex-col items-center justify-center px-6 text-center">
-                  <Package size={28} className="text-neutral-300" aria-hidden="true" />
-                  <p className="mt-3 text-sm font-semibold text-neutral-950">Brak zamówień</p>
-                  <p className="mt-1 text-sm text-neutral-500">Zmień filtr albo poczekaj na nowe zamówienie.</p>
+                <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
+                  <Package
+                    size={28}
+                    className="text-neutral-300"
+                    aria-hidden="true"
+                  />
+                  <p className="mt-3 text-sm font-semibold text-neutral-950">
+                    Brak zamówień
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Zmień filtr albo poczekaj na nowe zamówienie.
+                  </p>
                 </div>
               )}
             </div>
@@ -436,7 +455,7 @@ export default function AdminDashboardClient({
         </section>
 
         <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="border-b border-neutral-200 p-5 sm:p-6">
+          <div className="border-b border-neutral-200 p-4 sm:p-5">
             <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
               <div>
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
@@ -452,14 +471,15 @@ export default function AdminDashboardClient({
                   <span className="size-2 rounded-full bg-sky-400" /> Zamówienie
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-neutral-950" /> Dzień wolny
+                  <span className="size-2 rounded-full bg-neutral-950" /> Dzień
+                  wolny
                 </span>
               </div>
             </div>
           </div>
 
           <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="p-4 sm:p-6 lg:border-r lg:border-neutral-200">
+            <div className="p-3 sm:p-4 lg:border-r lg:border-neutral-200">
               <DayPicker
                 className="admin-calendar"
                 mode="multiple"
@@ -473,17 +493,26 @@ export default function AdminDashboardClient({
               />
             </div>
 
-            <div className="border-t border-neutral-200 p-5 sm:p-6 lg:border-t-0">
-              <p className="text-sm font-semibold text-neutral-950">Zablokowane dni</p>
+            <div className="border-t border-neutral-200 p-4 sm:p-5 lg:border-t-0">
+              <p className="text-sm font-semibold text-neutral-950">
+                Zablokowane dni
+              </p>
               {blockedDates.length ? (
                 <div className="mt-4 space-y-2">
                   {blockedDates.slice(0, 8).map((date) => (
-                    <div key={date} className="flex items-center justify-between gap-3 rounded-md bg-neutral-100 px-3 py-2">
-                      <span className="text-sm text-neutral-700">{formatDate(date)}</span>
+                    <div
+                      key={date}
+                      className="flex items-center justify-between gap-3 rounded-md bg-neutral-100 px-3 py-2"
+                    >
+                      <span className="text-sm text-neutral-700">
+                        {formatDate(date)}
+                      </span>
                       <button
                         type="button"
                         disabled={isPending}
-                        onClick={() => handleToggleBlockedDate(parseDateKey(date))}
+                        onClick={() =>
+                          handleToggleBlockedDate(parseDateKey(date))
+                        }
                         className="text-xs font-semibold text-neutral-500 underline underline-offset-2 hover:text-neutral-950 disabled:opacity-50"
                       >
                         Odblokuj
@@ -497,7 +526,9 @@ export default function AdminDashboardClient({
                   ) : null}
                 </div>
               ) : (
-                <p className="mt-3 text-sm leading-6 text-neutral-500">Nie ma jeszcze zablokowanych dni.</p>
+                <p className="mt-3 text-sm leading-6 text-neutral-500">
+                  Nie ma jeszcze zablokowanych dni.
+                </p>
               )}
 
               {actionMessage ? (
@@ -531,21 +562,27 @@ function StatCard({
   }[tone];
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-5">
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
         <p className="text-sm text-neutral-500">{label}</p>
-        <span className={`flex size-9 items-center justify-center rounded-md ${iconClass}`}>
+        <span
+          className={`flex size-8 items-center justify-center rounded-md ${iconClass}`}
+        >
           <Icon size={18} aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-5 text-2xl font-semibold tracking-tight text-neutral-950">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-neutral-950">
+        {value}
+      </p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses[status] ?? "bg-neutral-100 text-neutral-600"}`}>
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses[status] ?? "bg-neutral-100 text-neutral-600"}`}
+    >
       {getStatusLabel(status)}
     </span>
   );
@@ -562,40 +599,58 @@ function BookingDetails({
 }) {
   if (!booking) {
     return (
-      <aside className="flex min-h-80 items-center justify-center p-6 text-center">
+      <aside className="flex min-h-48 items-center justify-center p-5 text-center lg:self-start">
         <div>
-          <Package size={28} className="mx-auto text-neutral-300" aria-hidden="true" />
-          <p className="mt-3 text-sm font-semibold text-neutral-950">Wybierz zamówienie</p>
-          <p className="mt-1 text-sm text-neutral-500">Szczegóły pojawią się tutaj.</p>
+          <Package
+            size={28}
+            className="mx-auto text-neutral-300"
+            aria-hidden="true"
+          />
+          <p className="mt-3 text-sm font-semibold text-neutral-950">
+            Wybierz zamówienie
+          </p>
+          <p className="mt-1 text-sm text-neutral-500">
+            Szczegóły pojawią się tutaj.
+          </p>
         </div>
       </aside>
     );
   }
 
   return (
-    <aside className="min-w-0 bg-neutral-50 p-5 sm:p-6">
+    <aside className="min-w-0 self-start bg-neutral-50 p-4 sm:p-5 lg:sticky lg:top-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
             Zamówienie #{booking.id}
           </p>
-          <h3 className="mt-2 text-xl font-semibold text-neutral-950">{booking.customerName || "Brak danych klienta"}</h3>
+          <h3 className="mt-1.5 text-lg font-semibold text-neutral-950">
+            {booking.customerName || "Brak danych klienta"}
+          </h3>
         </div>
         <StatusBadge status={booking.status} />
       </div>
 
-      <label className="mt-5 block">
+      <label className="mt-4 block">
         <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
           Status realizacji
         </span>
         <select
-          value={statusOptions.some((option) => option.value === booking.status) ? booking.status : "paid"}
+          value={
+            statusOptions.some((option) => option.value === booking.status)
+              ? booking.status
+              : "paid"
+          }
           disabled={isPending}
-          onChange={(event) => onStatusChange(booking.id, event.target.value as BookingStatus)}
+          onChange={(event) =>
+            onStatusChange(booking.id, event.target.value as BookingStatus)
+          }
           className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10 disabled:opacity-50"
         >
           {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
           ))}
         </select>
       </label>
@@ -608,53 +663,99 @@ function BookingDetails({
           className="mt-5 block overflow-hidden rounded-md bg-neutral-950"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={booking.referenceImageUrl} alt="Zdjęcie referencyjne klienta" className="max-h-56 w-full object-contain" />
+          <img
+            src={booking.referenceImageUrl}
+            alt="Zdjęcie referencyjne klienta"
+            className="max-h-56 w-full object-contain"
+          />
           <span className="flex items-center gap-2 border-t border-white/10 px-3 py-2 text-xs font-medium text-neutral-300">
             <Camera size={14} aria-hidden="true" /> Otwórz zdjęcie referencyjne
           </span>
         </a>
       ) : null}
 
-      <div className="mt-5 grid gap-3 border-y border-neutral-200 py-4 text-sm">
-        <DetailRow icon={Package} label="Wariant" value={`${booking.rugTypeName || "Dywan"}${booking.rugSizeLabel ? ` · ${booking.rugSizeLabel}` : ""}`} />
-        <DetailRow icon={CalendarDays} label="Termin" value={formatDate(booking.bookingDate)} />
-        <DetailRow icon={CircleDollarSign} label="Kwota" value={formatPrice(booking.priceCents)} />
-        <DetailRow icon={Truck} label="Dostawa" value={getDeliveryLabel(booking.deliveryMethod)} />
-        {booking.parcelLockerCode ? <DetailRow icon={MapPin} label="Paczkomat" value={booking.parcelLockerCode} /> : null}
+      <div className="mt-4 grid gap-2.5 border-y border-neutral-200 py-3 text-sm">
+        <DetailRow
+          icon={Package}
+          label="Wariant"
+          value={`${booking.rugTypeName || "Dywan"}${booking.rugSizeLabel ? ` · ${booking.rugSizeLabel}` : ""}`}
+        />
+        <DetailRow
+          icon={CalendarDays}
+          label="Termin"
+          value={formatDate(booking.bookingDate)}
+        />
+        <DetailRow
+          icon={CircleDollarSign}
+          label="Kwota"
+          value={formatPrice(booking.priceCents)}
+        />
+        <DetailRow
+          icon={Truck}
+          label="Dostawa"
+          value={getDeliveryLabel(booking.deliveryMethod)}
+        />
+        {booking.parcelLockerCode ? (
+          <DetailRow
+            icon={MapPin}
+            label="Paczkomat"
+            value={booking.parcelLockerCode}
+          />
+        ) : null}
       </div>
 
-      <div className="space-y-3 pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Kontakt</p>
+      <div className="space-y-2.5 pt-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          Kontakt
+        </p>
         {booking.customerEmail ? (
-          <a href={`mailto:${booking.customerEmail}`} className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950">
+          <a
+            href={`mailto:${booking.customerEmail}`}
+            className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950"
+          >
             <Mail size={16} className="text-neutral-400" aria-hidden="true" />
             <span className="truncate">{booking.customerEmail}</span>
           </a>
         ) : null}
         {booking.customerPhone ? (
-          <a href={`tel:${booking.customerPhone}`} className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950">
+          <a
+            href={`tel:${booking.customerPhone}`}
+            className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950"
+          >
             <Phone size={16} className="text-neutral-400" aria-hidden="true" />
             {booking.customerPhone}
           </a>
         ) : null}
         {booking.deliveryAddress ? (
           <div className="flex items-start gap-3 text-sm leading-6 text-neutral-700">
-            <MapPin size={16} className="mt-1 shrink-0 text-neutral-400" aria-hidden="true" />
+            <MapPin
+              size={16}
+              className="mt-1 shrink-0 text-neutral-400"
+              aria-hidden="true"
+            />
             <span>{booking.deliveryAddress}</span>
           </div>
         ) : null}
         {booking.customerName ? (
           <div className="flex items-center gap-3 text-sm text-neutral-700">
-            <UserRound size={16} className="text-neutral-400" aria-hidden="true" />
+            <UserRound
+              size={16}
+              className="text-neutral-400"
+              aria-hidden="true"
+            />
             {booking.customerName}
           </div>
         ) : null}
       </div>
 
       {booking.notes ? (
-        <div className="mt-5 rounded-md border border-neutral-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Uwagi klienta</p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">{booking.notes}</p>
+        <div className="mt-4 rounded-md border border-neutral-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Uwagi klienta
+          </p>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
+            {booking.notes}
+          </p>
         </div>
       ) : null}
     </aside>
@@ -672,9 +773,15 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <Icon size={16} className="shrink-0 text-neutral-400" aria-hidden="true" />
+      <Icon
+        size={16}
+        className="shrink-0 text-neutral-400"
+        aria-hidden="true"
+      />
       <span className="text-neutral-500">{label}</span>
-      <span className="ml-auto max-w-[58%] truncate text-right font-medium text-neutral-800">{value}</span>
+      <span className="ml-auto max-w-[58%] truncate text-right font-medium text-neutral-800">
+        {value}
+      </span>
     </div>
   );
 }
