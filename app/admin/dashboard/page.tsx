@@ -1,5 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClientServer } from "@/lib/supabase/server";
+import {
+  CalendarRange,
+  ExternalLink,
+  LayoutDashboard,
+  PackageSearch,
+} from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import LogoutButton from "./logout-btn";
 import AdminDashboardClient, { type AdminBooking } from "./dashboard-client";
@@ -105,38 +112,106 @@ export default async function AdminDashboardPage() {
       .filter((date): date is string => Boolean(date)) ?? [];
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-950">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1440px] items-center justify-between gap-6 px-5 sm:px-8 lg:px-10">
-          <div>
+    <div className="min-h-screen bg-[#f5f5f5] text-[#0a0a0a]">
+      <div className="min-h-screen lg:grid lg:grid-cols-[224px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-[#e5e5e5] bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+          <div className="border-b border-[#e5e5e5] px-6 py-6">
             <p className="font-lobster text-2xl text-neutral-950">Carpetiem</p>
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
-              Panel administracyjny
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#737373]">
+              Studio dywanów
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-neutral-500 sm:block">
-              {user.email}
-            </span>
-            <LogoutButton />
+          <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Panel administracyjny">
+            <a
+              href="#overview"
+              className="flex h-10 items-center gap-3 rounded-md bg-[#ffe44c] px-3 text-sm font-semibold text-neutral-950"
+            >
+              <LayoutDashboard size={17} aria-hidden="true" />
+              Pulpit
+            </a>
+            <a
+              href="#orders"
+              className="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-[#525252] transition-colors hover:bg-[#fafafa] hover:text-[#0a0a0a]"
+            >
+              <PackageSearch size={17} aria-hidden="true" />
+              Zamówienia
+            </a>
+            <a
+              href="#calendar"
+              className="flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium text-[#525252] transition-colors hover:bg-[#fafafa] hover:text-[#0a0a0a]"
+            >
+              <CalendarRange size={17} aria-hidden="true" />
+              Kalendarz
+            </a>
+          </nav>
+
+          <div className="border-t border-[#e5e5e5] p-4">
+            <Link
+              href="/"
+              className="flex items-center justify-between rounded-md px-2 py-2 text-sm font-medium text-[#525252] hover:bg-[#fafafa] hover:text-[#0a0a0a]"
+            >
+              Przejdź do witryny
+              <ExternalLink size={15} aria-hidden="true" />
+            </Link>
+            <div className="mt-3 flex items-center gap-3 rounded-md bg-[#fafafa] p-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] text-xs font-semibold text-white">
+                {user.email?.slice(0, 1).toUpperCase() || "A"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-[#0a0a0a]">Administrator</p>
+                <p className="truncate text-[11px] text-[#737373]">{user.email}</p>
+              </div>
+              <LogoutButton compact />
+            </div>
           </div>
+        </aside>
+
+        <div className="min-w-0">
+          <header className="sticky top-0 z-30 border-b border-[#e5e5e5] bg-white/95 backdrop-blur">
+            <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center gap-3">
+                <div className="lg:hidden">
+                  <p className="font-lobster text-xl text-neutral-950">Carpetiem</p>
+                </div>
+                <div className="hidden lg:block">
+                  <p className="text-sm font-semibold text-[#0a0a0a]">Panel administracyjny</p>
+                  <p className="text-xs text-[#737373]">Zarządzanie studiem</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="hidden items-center gap-2 text-xs font-medium text-[#525252] sm:flex">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  System aktywny
+                </span>
+                <div className="lg:hidden">
+                  <LogoutButton />
+                </div>
+              </div>
+            </div>
+
+            <nav className="flex gap-1 overflow-x-auto border-t border-[#e5e5e5] px-3 py-2 lg:hidden" aria-label="Sekcje panelu">
+              <a href="#overview" className="whitespace-nowrap rounded-md bg-[#ffe44c] px-3 py-1.5 text-xs font-semibold text-neutral-950">Pulpit</a>
+              <a href="#orders" className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]">Zamówienia</a>
+              <a href="#calendar" className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]">Kalendarz</a>
+            </nav>
+          </header>
+
+          <main className="w-full px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+            {bookingsError || blockedError ? (
+              <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                Nie udało się pobrać wszystkich danych panelu. Sprawdź połączenie z Supabase.
+              </div>
+            ) : null}
+
+            <AdminDashboardClient
+              initialBookings={bookings as AdminBooking[]}
+              initialBlockedDates={blockedDates}
+            />
+          </main>
         </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-[1440px] px-5 py-4 sm:px-8 lg:px-10 lg:py-5">
-        {bookingsError || blockedError ? (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Nie udało się pobrać wszystkich danych panelu. Sprawdź połączenie z
-            Supabase oraz czy migracje tabel zostały wykonane.
-          </div>
-        ) : null}
-
-        <AdminDashboardClient
-          initialBookings={bookings as AdminBooking[]}
-          initialBlockedDates={blockedDates}
-        />
-      </main>
+      </div>
     </div>
   );
 }

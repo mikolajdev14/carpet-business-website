@@ -14,8 +14,17 @@ import {
   Search,
   Truck,
   UserRound,
+  X,
+  type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { toggleBlockedDate, updateBookingStatus } from "./actions";
@@ -45,8 +54,8 @@ export type AdminBooking = {
   referenceImageUrl: string | null;
 };
 
-type StatusFilter = "all" | BookingStatus;
 type BookingStatus = "paid" | "in_progress" | "completed" | "cancelled";
+type StatusFilter = "all" | BookingStatus;
 
 const statusOptions: Array<{ value: BookingStatus; label: string }> = [
   { value: "paid", label: "Opłacone" },
@@ -60,16 +69,14 @@ const statusLabels: Record<string, string> = Object.fromEntries(
 );
 
 const statusClasses: Record<string, string> = {
-  paid: "bg-amber-100 text-amber-800",
-  in_progress: "bg-sky-100 text-sky-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-neutral-200 text-neutral-600",
+  paid: "bg-[#fff2cf] text-[#8a6411]",
+  in_progress: "bg-[#e6f4f8] text-[#24748a]",
+  completed: "bg-[#e4f4eb] text-[#287653]",
+  cancelled: "bg-[#f5f5f5] text-[#525252]",
 };
 
 const formatDate = (value: string | null) => {
-  if (!value) {
-    return "Brak terminu";
-  }
+  if (!value) return "Brak terminu";
 
   return new Intl.DateTimeFormat("pl-PL", {
     day: "numeric",
@@ -79,9 +86,7 @@ const formatDate = (value: string | null) => {
 };
 
 const formatShortDate = (value: string | null) => {
-  if (!value) {
-    return "—";
-  }
+  if (!value) return "—";
 
   return new Intl.DateTimeFormat("pl-PL", {
     day: "2-digit",
@@ -90,10 +95,17 @@ const formatShortDate = (value: string | null) => {
   }).format(new Date(`${value.slice(0, 10)}T12:00:00`));
 };
 
+const formatDateTime = (value: string | null) => {
+  if (!value) return "Brak danych";
+
+  return new Intl.DateTimeFormat("pl-PL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+};
+
 const formatPrice = (priceCents: number | null) => {
-  if (priceCents == null) {
-    return "Brak ceny";
-  }
+  if (priceCents == null) return "Brak ceny";
 
   return new Intl.NumberFormat("pl-PL", {
     style: "currency",
@@ -116,14 +128,8 @@ const parseDateKey = (date: string) => {
 const getStatusLabel = (status: string) => statusLabels[status] ?? status;
 
 const getDeliveryLabel = (method: string | null) => {
-  if (method === "parcel_locker") {
-    return "Paczkomat InPost";
-  }
-
-  if (method === "courier") {
-    return "Kurier";
-  }
-
+  if (method === "parcel_locker") return "Paczkomat InPost";
+  if (method === "courier") return "Kurier";
   return "Brak danych";
 };
 
@@ -136,13 +142,48 @@ export default function AdminDashboardClient({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [blockedDates, setBlockedDates] = useState(initialBlockedDates);
-  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
-    initialBookings[0]?.id ?? null,
-  );
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [actionMessage, setActionMessage] = useState<string | undefined>();
+  const [actionMessage, setActionMessage] = useState<string>();
+  const [hoveredCalendarDate, setHoveredCalendarDate] = useState<string | null>(
+    null,
+  );
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(() =>
+    toDateKey(new Date()),
+  );
+  const calendarHoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [isPending, startTransition] = useTransition();
+
+  const selectedBooking =
+    bookings.find((booking) => booking.id === selectedBookingId) ?? null;
+
+  useEffect(() => {
+    if (!selectedBooking) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedBookingId(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedBooking]);
+
+  useEffect(() => {
+    return () => {
+      if (calendarHoverTimeout.current) {
+        clearTimeout(calendarHoverTimeout.current);
+      }
+    };
+  }, []);
 
   const filteredBookings = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("pl-PL");
@@ -165,9 +206,6 @@ export default function AdminDashboardClient({
     });
   }, [bookings, search, statusFilter]);
 
-  const selectedBooking =
-    bookings.find((booking) => booking.id === selectedBookingId) ?? null;
-
   const stats = useMemo(
     () => ({
       total: bookings.length,
@@ -179,6 +217,21 @@ export default function AdminDashboardClient({
       revenue: bookings
         .filter((booking) => booking.status !== "cancelled")
         .reduce((total, booking) => total + (booking.priceCents ?? 0), 0),
+    }),
+    [bookings],
+  );
+
+  const statusCounts = useMemo(
+    () => ({
+      all: bookings.length,
+      paid: bookings.filter((booking) => booking.status === "paid").length,
+      in_progress: bookings.filter(
+        (booking) => booking.status === "in_progress",
+      ).length,
+      completed: bookings.filter((booking) => booking.status === "completed")
+        .length,
+      cancelled: bookings.filter((booking) => booking.status === "cancelled")
+        .length,
     }),
     [bookings],
   );
@@ -196,6 +249,15 @@ export default function AdminDashboardClient({
         ),
       ),
     [bookings],
+  );
+
+  const activeCalendarDate = hoveredCalendarDate ?? selectedCalendarDate;
+  const calendarBookings = useMemo(
+    () =>
+      bookings.filter(
+        (booking) => booking.bookingDate === activeCalendarDate,
+      ),
+    [activeCalendarDate, bookings],
   );
 
   const handleStatusChange = (bookingId: number, status: BookingStatus) => {
@@ -242,6 +304,39 @@ export default function AdminDashboardClient({
     });
   };
 
+  const clearCalendarHoverTimeout = () => {
+    if (calendarHoverTimeout.current) {
+      clearTimeout(calendarHoverTimeout.current);
+      calendarHoverTimeout.current = null;
+    }
+  };
+
+  const handleCalendarMouseEnter = (date: Date) => {
+    clearCalendarHoverTimeout();
+    setHoveredCalendarDate(toDateKey(date));
+  };
+
+  const handleCalendarMouseLeave = () => {
+    clearCalendarHoverTimeout();
+    calendarHoverTimeout.current = setTimeout(() => {
+      setHoveredCalendarDate(null);
+      calendarHoverTimeout.current = null;
+    }, 220);
+  };
+
+  const handleCalendarDayClick = (date: Date) => {
+    const dateKey = toDateKey(date);
+    const hasBookings = bookings.some(
+      (booking) => booking.bookingDate === dateKey,
+    );
+
+    clearCalendarHoverTimeout();
+    setSelectedCalendarDate(dateKey);
+    setHoveredCalendarDate(hasBookings ? dateKey : null);
+
+    if (!hasBookings) handleToggleBlockedDate(date);
+  };
+
   const blockedDateObjects = blockedDates.map(parseDateKey);
   const bookedDateObjects = bookedDateKeys.map(parseDateKey);
 
@@ -249,242 +344,256 @@ export default function AdminDashboardClient({
     <>
       <style>{`
         .admin-calendar {
-          --rdp-accent-color: #171717;
-          --rdp-today-color: #171717;
+          --rdp-accent-color: #0a0a0a;
+          --rdp-today-color: #0a0a0a;
           width: 100%;
         }
-
         .admin-calendar .rdp-months,
         .admin-calendar .rdp-month,
         .admin-calendar .rdp-month_grid {
           width: 100%;
           max-width: 100%;
         }
-
         .admin-calendar .rdp-caption_label {
-          font-size: 0.95rem;
+          color: #0a0a0a;
+          font-size: 0.9rem;
           font-weight: 700;
         }
-
         .admin-calendar .rdp-weekday {
           color: #737373;
-          font-size: 0.7rem;
-          font-weight: 600;
+          font-size: 0.68rem;
+          font-weight: 700;
+          text-transform: uppercase;
         }
-
         .admin-calendar .rdp-day_button {
-          width: 2.15rem;
-          height: 2.15rem;
+          width: 2.25rem;
+          height: 2.25rem;
           border-radius: 0.375rem;
+          font-size: 0.8rem;
         }
-
+        .admin-calendar .rdp-today:not(.blocked) .rdp-day_button {
+          background: #ffe44c;
+        }
         .admin-calendar .blocked .rdp-day_button {
-          background: #171717;
-          color: #ffe44c;
+          background: #0a0a0a;
+          color: white;
         }
-
         .admin-calendar .booked .rdp-day_button {
-          box-shadow: inset 0 0 0 2px #38bdf8;
+          box-shadow: inset 0 0 0 2px #e0bd00;
         }
       `}</style>
 
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-neutral-500">
-              Centrum zarządzania
-            </p>
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl">
-              Zamówienia i terminy
-            </h1>
-          </div>
-          <p className="text-sm text-neutral-500">
-            Ostatnia aktualizacja: teraz
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            label="Wszystkie zamówienia"
-            value={String(stats.total)}
-            icon={Package}
-          />
-          <StatCard
-            label="Do realizacji"
-            value={String(stats.active)}
-            icon={Clock3}
-            tone="yellow"
-          />
-          <StatCard
-            label="Zakończone"
-            value={String(stats.completed)}
-            icon={Check}
-            tone="green"
-          />
-          <StatCard
-            label="Wartość zamówień"
-            value={formatPrice(stats.revenue)}
-            icon={CircleDollarSign}
-          />
-        </div>
-
-        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[1560px] flex-col gap-5">
+        <section id="overview" className="scroll-mt-28">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-base font-semibold text-neutral-950">
-                Zamówienia
-              </h2>
-              <p className="mt-0.5 text-xs text-neutral-500">
-                {filteredBookings.length} z {bookings.length} rekordów
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-600">
+                Pulpit
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold text-[#0a0a0a] sm:text-3xl">
+                Przegląd studia
+              </h1>
+              <p className="mt-1 text-sm text-[#737373]">
+                Aktualny stan zamówień i terminów.
               </p>
             </div>
+            <p className="text-xs font-medium text-[#737373]">Dane aktualne teraz</p>
+          </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <label className="relative block sm:min-w-64">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Wszystkie zamówienia"
+              value={String(stats.total)}
+              icon={Package}
+            />
+            <StatCard
+              label="Do realizacji"
+              value={String(stats.active)}
+              icon={Clock3}
+              tone="rose"
+            />
+            <StatCard
+              label="Zakończone"
+              value={String(stats.completed)}
+              icon={Check}
+              tone="green"
+            />
+            <StatCard
+              label="Wartość zamówień"
+              value={formatPrice(stats.revenue)}
+              icon={CircleDollarSign}
+              tone="yellow"
+            />
+          </div>
+        </section>
+
+        <section
+          id="orders"
+          className="scroll-mt-28 overflow-hidden rounded-lg border border-[#e5e5e5] bg-white"
+        >
+          <div className="border-b border-[#e5e5e5] px-4 py-4 sm:px-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[#0a0a0a]">Historia zamówień</h2>
+                <p className="mt-0.5 text-xs text-[#737373]">
+                  {filteredBookings.length} z {bookings.length} rekordów
+                </p>
+              </div>
+
+              <label className="relative block w-full xl:w-72">
                 <Search
                   size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a3a3a3]"
                   aria-hidden="true"
                 />
                 <span className="sr-only">Szukaj zamówień</span>
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Szukaj klienta lub ID"
-                  className="h-10 w-full rounded-md border border-neutral-300 bg-white pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10"
+                  placeholder="Szukaj klienta, e-maila lub ID"
+                  className="h-10 w-full rounded-md border border-[#d4d4d4] bg-[#fafafa] pl-9 pr-3 text-sm text-[#0a0a0a] outline-none transition-colors placeholder:text-[#a3a3a3] focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10"
                 />
               </label>
-              <label>
-                <span className="sr-only">Filtruj status</span>
-                <select
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(event.target.value as StatusFilter)
-                  }
-                  className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10 sm:w-44"
-                >
-                  <option value="all">Wszystkie statusy</option>
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            </div>
+
+            <div className="mt-4 flex gap-1 overflow-x-auto border-b border-[#e5e5e5]">
+              <FilterTab
+                active={statusFilter === "all"}
+                label="Wszystkie"
+                count={statusCounts.all}
+                onClick={() => setStatusFilter("all")}
+              />
+              {statusOptions.map((option) => (
+                <FilterTab
+                  key={option.value}
+                  active={statusFilter === option.value}
+                  label={option.label}
+                  count={statusCounts[option.value]}
+                  onClick={() => setStatusFilter(option.value)}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="min-w-0 border-b border-neutral-200 lg:max-h-[600px] lg:overflow-y-auto lg:border-b-0 lg:border-r">
-              {filteredBookings.length ? (
-                <div className="divide-y divide-neutral-200">
+          {filteredBookings.length ? (
+            <>
+              <div className="hidden xl:block">
+                <div className="grid min-w-[900px] grid-cols-[72px_minmax(220px,1.5fr)_120px_140px_120px_110px_28px] items-center gap-3 border-b border-[#e5e5e5] bg-[#fafafa] px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  <span>ID</span>
+                  <span>Klient i projekt</span>
+                  <span>Termin</span>
+                  <span>Dostawa</span>
+                  <span>Status</span>
+                  <span className="text-right">Kwota</span>
+                  <span />
+                </div>
+                <div className="max-h-[520px] min-w-[900px] divide-y divide-[#e5e5e5] overflow-y-auto">
                   {filteredBookings.map((booking) => (
                     <button
                       key={booking.id}
                       type="button"
                       onClick={() => setSelectedBookingId(booking.id)}
-                      className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-50 sm:px-5 ${
-                        selectedBookingId === booking.id
-                          ? "bg-neutral-50"
-                          : "bg-white"
-                      }`}
+                      className="grid w-full grid-cols-[72px_minmax(220px,1.5fr)_120px_140px_120px_110px_28px] items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-[#fffde7] focus-visible:bg-[#fffde7] focus-visible:outline-none"
                     >
-                      <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100 text-xs font-semibold text-neutral-500">
-                        {booking.referenceImageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={booking.referenceImageUrl}
-                            alt=""
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          `#${booking.id}`
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-neutral-950">
+                      <span className="text-xs font-semibold text-[#525252]">#{booking.id}</span>
+                      <span className="flex min-w-0 items-center gap-3">
+                        <BookingAvatar booking={booking} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-[#0a0a0a]">
                             {booking.customerName || "Klient bez nazwy"}
-                          </p>
-                          <StatusBadge status={booking.status} />
-                        </div>
-                        <p className="mt-1 truncate text-xs text-neutral-500">
-                          #{booking.id} · {booking.rugTypeName || "Dywan"} ·{" "}
-                          {formatShortDate(booking.bookingDate)}
-                        </p>
-                      </div>
-                      <div className="hidden text-right sm:block">
-                        <p className="text-sm font-semibold text-neutral-950">
-                          {formatPrice(booking.priceCents)}
-                        </p>
-                        <p className="mt-1 text-xs text-neutral-500">
-                          {getDeliveryLabel(booking.deliveryMethod)}
-                        </p>
-                      </div>
-                      <ChevronRight
-                        size={17}
-                        className="shrink-0 text-neutral-400"
-                        aria-hidden="true"
-                      />
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-[#737373]">
+                            {booking.rugTypeName || "Dywan"} · {booking.rugSizeLabel || "brak rozmiaru"}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="text-xs font-medium text-[#525252]">
+                        {formatShortDate(booking.bookingDate)}
+                      </span>
+                      <span className="flex items-center gap-2 text-xs text-[#525252]">
+                        <Truck size={14} className="text-[#a3a3a3]" aria-hidden="true" />
+                        {getDeliveryLabel(booking.deliveryMethod)}
+                      </span>
+                      <StatusBadge status={booking.status} />
+                      <span className="text-right text-sm font-semibold text-[#0a0a0a]">
+                        {formatPrice(booking.priceCents)}
+                      </span>
+                      <ChevronRight size={16} className="text-[#a3a3a3]" aria-hidden="true" />
                     </button>
                   ))}
                 </div>
-              ) : (
-                <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
-                  <Package
-                    size={28}
-                    className="text-neutral-300"
-                    aria-hidden="true"
-                  />
-                  <p className="mt-3 text-sm font-semibold text-neutral-950">
-                    Brak zamówień
-                  </p>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Zmień filtr albo poczekaj na nowe zamówienie.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
 
-            <BookingDetails
-              booking={selectedBooking}
-              isPending={isPending}
-              onStatusChange={handleStatusChange}
+              <div className="divide-y divide-[#e5e5e5] xl:hidden">
+                {filteredBookings.map((booking) => (
+                  <button
+                    key={booking.id}
+                    type="button"
+                    onClick={() => setSelectedBookingId(booking.id)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#fffde7]"
+                  >
+                    <BookingAvatar booking={booking} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-semibold text-[#0a0a0a]">
+                          {booking.customerName || "Klient bez nazwy"}
+                        </span>
+                        <StatusBadge status={booking.status} />
+                      </span>
+                      <span className="mt-1 block truncate text-xs text-[#737373]">
+                        #{booking.id} · {booking.rugTypeName || "Dywan"} · {formatShortDate(booking.bookingDate)}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-xs font-semibold text-[#0a0a0a]">
+                        {formatPrice(booking.priceCents)}
+                      </span>
+                      <ChevronRight size={16} className="ml-auto mt-1 text-[#a3a3a3]" aria-hidden="true" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyState
+              icon={Package}
+              title="Brak zamówień"
+              description="Nie znaleziono rekordów pasujących do wybranego filtra."
             />
-          </div>
+          )}
         </section>
 
-        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="border-b border-neutral-200 p-4 sm:p-5">
-            <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-              <div>
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-950">
-                  <CalendarDays size={20} aria-hidden="true" />
-                  Kalendarz terminów
-                </h2>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Kliknij dzień, aby go zablokować albo odblokować.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3 text-xs text-neutral-500">
-                <span className="inline-flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-sky-400" /> Zamówienie
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-neutral-950" /> Dzień
-                  wolny
-                </span>
-              </div>
+        <section
+          id="calendar"
+          className="scroll-mt-28 overflow-hidden rounded-lg border border-[#e5e5e5] bg-white"
+        >
+          <div className="flex flex-col justify-between gap-3 border-b border-[#e5e5e5] px-4 py-4 sm:flex-row sm:items-end sm:px-5">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-[#0a0a0a]">
+                <CalendarDays size={19} className="text-neutral-950" aria-hidden="true" />
+                Kalendarz realizacji
+              </h2>
+              <p className="mt-1 text-xs text-[#737373]">Plan zamówień i dni wolnych</p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-xs text-[#525252]">
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2 rounded-full bg-[#e0bd00]" /> Zamówienie
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2 rounded-full bg-[#0a0a0a]" /> Dzień wolny
+              </span>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="p-3 sm:p-4 lg:border-r lg:border-neutral-200">
+          <div className="grid xl:grid-cols-[minmax(430px,1fr)_380px]">
+            <div className="p-3 sm:p-5 xl:border-r xl:border-[#e5e5e5]">
               <DayPicker
                 className="admin-calendar"
                 mode="multiple"
                 selected={blockedDateObjects}
-                onDayClick={handleToggleBlockedDate}
+                onDayClick={handleCalendarDayClick}
+                onDayMouseEnter={handleCalendarMouseEnter}
+                onDayMouseLeave={handleCalendarMouseLeave}
                 modifiers={{
                   blocked: blockedDateObjects,
                   booked: bookedDateObjects,
@@ -493,53 +602,103 @@ export default function AdminDashboardClient({
               />
             </div>
 
-            <div className="border-t border-neutral-200 p-4 sm:p-5 lg:border-t-0">
-              <p className="text-sm font-semibold text-neutral-950">
-                Zablokowane dni
-              </p>
-              {blockedDates.length ? (
-                <div className="mt-4 space-y-2">
-                  {blockedDates.slice(0, 8).map((date) => (
-                    <div
-                      key={date}
-                      className="flex items-center justify-between gap-3 rounded-md bg-neutral-100 px-3 py-2"
-                    >
-                      <span className="text-sm text-neutral-700">
-                        {formatDate(date)}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() =>
-                          handleToggleBlockedDate(parseDateKey(date))
-                        }
-                        className="text-xs font-semibold text-neutral-500 underline underline-offset-2 hover:text-neutral-950 disabled:opacity-50"
-                      >
-                        Odblokuj
-                      </button>
-                    </div>
-                  ))}
-                  {blockedDates.length > 8 ? (
-                    <p className="pt-1 text-xs text-neutral-500">
-                      + {blockedDates.length - 8} kolejnych dni w kalendarzu
+            <div
+              onMouseEnter={clearCalendarHoverTimeout}
+              onMouseLeave={handleCalendarMouseLeave}
+              className="border-t border-[#e5e5e5] bg-[#fafafa] xl:border-t-0"
+            >
+              <div className="border-b border-[#e5e5e5] p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#737373]">
+                      Wybrany dzień
                     </p>
-                  ) : null}
+                    <h3 className="mt-1 text-base font-semibold text-[#0a0a0a]">
+                      {formatDate(activeCalendarDate)}
+                    </h3>
+                  </div>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#525252] shadow-sm ring-1 ring-[#e5e5e5]">
+                    {calendarBookings.length}
+                  </span>
                 </div>
-              ) : (
-                <p className="mt-3 text-sm leading-6 text-neutral-500">
-                  Nie ma jeszcze zablokowanych dni.
-                </p>
-              )}
 
-              {actionMessage ? (
-                <p className="mt-5 border-t border-neutral-200 pt-4 text-sm font-medium text-neutral-700">
-                  {actionMessage}
-                </p>
-              ) : null}
+                {calendarBookings.length ? (
+                  <div className="mt-4 divide-y divide-[#e5e5e5] overflow-hidden rounded-md border border-[#e5e5e5] bg-white">
+                    {calendarBookings.map((booking) => (
+                      <button
+                        key={booking.id}
+                        type="button"
+                        onClick={() => setSelectedBookingId(booking.id)}
+                        className="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-[#fffde7]"
+                      >
+                        <BookingAvatar booking={booking} small />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[#0a0a0a]">
+                            {booking.customerName || "Klient bez nazwy"}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-[#737373]">
+                            #{booking.id} · {booking.rugTypeName || "Dywan"}
+                          </span>
+                        </span>
+                        <StatusBadge status={booking.status} />
+                        <ChevronRight size={15} className="shrink-0 text-[#a3a3a3]" aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-md border border-dashed border-[#d4d4d4] bg-white px-3 py-4 text-center text-sm text-[#737373]">
+                    Brak zamówień w tym dniu
+                  </p>
+                )}
+              </div>
+
+              <div className="p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#0a0a0a]">Dni wolne</p>
+                  <span className="text-xs font-medium text-[#737373]">{blockedDates.length}</span>
+                </div>
+                {blockedDates.length ? (
+                  <div className="mt-3 max-h-48 space-y-1.5 overflow-y-auto">
+                    {blockedDates.map((date) => (
+                      <div
+                        key={date}
+                        className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-[#e5e5e5]"
+                      >
+                        <span className="text-xs font-medium text-[#525252]">{formatDate(date)}</span>
+                        <button
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => handleToggleBlockedDate(parseDateKey(date))}
+                          className="rounded px-1.5 py-1 text-[11px] font-semibold text-neutral-950 hover:bg-[#ffe44c] disabled:opacity-50"
+                        >
+                          Odblokuj
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-[#737373]">Brak zablokowanych terminów.</p>
+                )}
+              </div>
             </div>
           </div>
         </section>
       </div>
+
+      {selectedBooking ? (
+        <BookingDrawer
+          booking={selectedBooking}
+          isPending={isPending}
+          onClose={() => setSelectedBookingId(null)}
+          onStatusChange={handleStatusChange}
+        />
+      ) : null}
+
+      {actionMessage ? (
+        <div className="fixed bottom-4 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-md bg-[#0a0a0a] px-4 py-3 text-center text-sm font-medium text-white shadow-xl">
+          {actionMessage}
+        </div>
+      ) : null}
     </>
   );
 }
@@ -552,213 +711,275 @@ function StatCard({
 }: {
   label: string;
   value: string;
-  icon: typeof Package;
-  tone?: "neutral" | "yellow" | "green";
+  icon: LucideIcon;
+  tone?: "neutral" | "rose" | "green" | "yellow";
 }) {
-  const iconClass = {
-    neutral: "bg-neutral-100 text-neutral-700",
-    yellow: "bg-[#fff3a8] text-neutral-900",
-    green: "bg-emerald-100 text-emerald-700",
+  const toneClass = {
+    neutral: "bg-[#f5f5f5] text-[#525252]",
+    rose: "bg-[#ffe44c] text-neutral-950",
+    green: "bg-[#e4f4eb] text-[#287653]",
+    yellow: "bg-neutral-950 text-[#ffe44c]",
   }[tone];
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="rounded-lg border border-[#e5e5e5] bg-white p-4">
       <div className="flex items-start justify-between gap-4">
-        <p className="text-sm text-neutral-500">{label}</p>
-        <span
-          className={`flex size-8 items-center justify-center rounded-md ${iconClass}`}
-        >
+        <div>
+          <p className="text-xs font-medium text-[#737373]">{label}</p>
+          <p className="mt-2 text-2xl font-semibold text-[#0a0a0a]">{value}</p>
+        </div>
+        <span className={`flex size-9 items-center justify-center rounded-md ${toneClass}`}>
           <Icon size={18} aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-neutral-950">
-        {value}
-      </p>
     </div>
+  );
+}
+
+function FilterTab({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex h-9 shrink-0 items-center gap-1.5 px-3 text-xs font-semibold transition-colors ${
+        active ? "text-neutral-950" : "text-[#737373] hover:text-[#0a0a0a]"
+      }`}
+    >
+      {label}
+      <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-[#ffe44c]" : "bg-[#f5f5f5]"}`}>
+        {count}
+      </span>
+      {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[#ffe44c]" /> : null}
+    </button>
+  );
+}
+
+function BookingAvatar({
+  booking,
+  small = false,
+}: {
+  booking: AdminBooking;
+  small?: boolean;
+}) {
+  return (
+    <span
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#f5f5f5] font-semibold text-[#737373] ${small ? "size-8 text-[10px]" : "size-9 text-xs"}`}
+    >
+      {booking.referenceImageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={booking.referenceImageUrl} alt="" className="size-full object-cover" />
+      ) : (
+        (booking.customerName || `#${booking.id}`).slice(0, 1).toUpperCase()
+      )}
+    </span>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusClasses[status] ?? "bg-neutral-100 text-neutral-600"}`}
+      className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold ${statusClasses[status] ?? "bg-[#f5f5f5] text-[#525252]"}`}
     >
+      <span className="size-1.5 rounded-full bg-current opacity-70" />
       {getStatusLabel(status)}
     </span>
   );
 }
 
-function BookingDetails({
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center">
+      <span className="flex size-10 items-center justify-center rounded-full bg-[#f5f5f5] text-[#737373]">
+        <Icon size={19} aria-hidden="true" />
+      </span>
+      <p className="mt-3 text-sm font-semibold text-[#0a0a0a]">{title}</p>
+      <p className="mt-1 max-w-sm text-sm text-[#737373]">{description}</p>
+    </div>
+  );
+}
+
+function BookingDrawer({
   booking,
   isPending,
+  onClose,
   onStatusChange,
 }: {
-  booking: AdminBooking | null;
+  booking: AdminBooking;
   isPending: boolean;
+  onClose: () => void;
   onStatusChange: (bookingId: number, status: BookingStatus) => void;
 }) {
-  if (!booking) {
-    return (
-      <aside className="flex min-h-48 items-center justify-center p-5 text-center lg:self-start">
-        <div>
-          <Package
-            size={28}
-            className="mx-auto text-neutral-300"
-            aria-hidden="true"
-          />
-          <p className="mt-3 text-sm font-semibold text-neutral-950">
-            Wybierz zamówienie
-          </p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Szczegóły pojawią się tutaj.
-          </p>
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-[#0a0a0a]/25 backdrop-blur-[2px]"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="booking-drawer-title"
+        className="ml-auto flex h-full w-full max-w-[540px] flex-col border-l border-[#e5e5e5] bg-white shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-[#e5e5e5] px-4 py-4 sm:px-6">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#737373]">
+                Zamówienie #{booking.id}
+              </p>
+              <StatusBadge status={booking.status} />
+            </div>
+            <h2 id="booking-drawer-title" className="mt-1.5 truncate text-xl font-semibold text-[#0a0a0a]">
+              {booking.customerName || "Klient bez nazwy"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Zamknij szczegóły"
+            aria-label="Zamknij szczegóły"
+            className="flex size-9 shrink-0 items-center justify-center rounded-md border border-[#d4d4d4] text-[#525252] transition-colors hover:border-neutral-950 hover:text-neutral-950"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pb-8 sm:px-6">
+          <div className="sticky top-0 z-10 -mx-4 border-b border-[#e5e5e5] bg-white px-4 py-3 sm:-mx-6 sm:px-6">
+            <label className="flex items-center justify-between gap-4">
+              <span className="text-xs font-semibold text-[#525252]">Status realizacji</span>
+              <select
+                value={
+                  statusOptions.some((option) => option.value === booking.status)
+                    ? booking.status
+                    : "paid"
+                }
+                disabled={isPending}
+                onChange={(event) =>
+                  onStatusChange(booking.id, event.target.value as BookingStatus)
+                }
+                className="h-9 min-w-40 rounded-md border border-[#d4d4d4] bg-[#fafafa] px-3 text-xs font-semibold text-[#0a0a0a] outline-none focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10 disabled:opacity-50"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {booking.referenceImageUrl ? (
+            <a
+              href={booking.referenceImageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 block overflow-hidden rounded-md bg-[#0a0a0a]"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={booking.referenceImageUrl}
+                alt="Zdjęcie referencyjne klienta"
+                className="max-h-64 w-full object-contain"
+              />
+              <span className="flex items-center gap-2 border-t border-white/10 px-3 py-2 text-xs font-medium text-white/75">
+                <Camera size={14} aria-hidden="true" /> Otwórz zdjęcie referencyjne
+              </span>
+            </a>
+          ) : (
+            <div className="mt-5 flex items-center gap-3 rounded-md border border-dashed border-[#d4d4d4] bg-[#fafafa] px-4 py-3 text-sm text-[#737373]">
+              <Camera size={17} aria-hidden="true" />
+              Brak zdjęcia referencyjnego
+            </div>
+          )}
+
+          <DetailSection title="Szczegóły zlecenia">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DetailRow icon={Package} label="Wariant" value={booking.rugTypeName || "Dywan"} />
+              <DetailRow icon={Package} label="Rozmiar" value={booking.rugSizeLabel || "Brak danych"} />
+              <DetailRow icon={CalendarDays} label="Termin wykonania" value={formatDate(booking.bookingDate)} />
+              <DetailRow icon={CircleDollarSign} label="Kwota" value={formatPrice(booking.priceCents)} />
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Dostawa">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DetailRow icon={Truck} label="Metoda" value={getDeliveryLabel(booking.deliveryMethod)} />
+              {booking.deliveryMethod === "parcel_locker" ? (
+                <DetailRow icon={MapPin} label="Paczkomat InPost" value={booking.parcelLockerCode || "Brak danych"} />
+              ) : null}
+              {booking.deliveryMethod === "courier" ? (
+                <DetailRow icon={MapPin} label="Adres kuriera" value={booking.deliveryAddress || "Brak danych"} />
+              ) : null}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Dane klienta">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DetailRow icon={UserRound} label="Imię i nazwisko" value={booking.customerName || "Brak danych"} />
+              <DetailRow
+                icon={Mail}
+                label="E-mail"
+                value={booking.customerEmail || "Brak danych"}
+                href={booking.customerEmail ? `mailto:${booking.customerEmail}` : undefined}
+              />
+              <DetailRow
+                icon={Phone}
+                label="Telefon"
+                value={booking.customerPhone || "Brak danych"}
+                href={booking.customerPhone ? `tel:${booking.customerPhone}` : undefined}
+              />
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Uwagi klienta">
+            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#525252]">
+              {booking.notes || "Brak dodatkowych uwag."}
+            </p>
+          </DetailSection>
+
+          <DetailSection title="Płatność i system">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DetailRow icon={Clock3} label="Utworzono" value={formatDateTime(booking.createdAt)} />
+              <DetailRow icon={Clock3} label="Ostatnia zmiana" value={formatDateTime(booking.updatedAt)} />
+              <DetailRow icon={Clock3} label="Wygasa" value={formatDateTime(booking.expiresAt)} />
+              <DetailRow icon={CircleDollarSign} label="Stripe session ID" value={booking.stripeSessionId || "Brak danych"} mono />
+              <DetailRow icon={CircleDollarSign} label="Payment intent ID" value={booking.stripePaymentIntentId || "Brak danych"} mono />
+            </div>
+          </DetailSection>
         </div>
       </aside>
-    );
-  }
+    </div>
+  );
+}
 
+function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <aside className="min-w-0 self-start bg-neutral-50 p-4 sm:p-5 lg:sticky lg:top-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
-            Zamówienie #{booking.id}
-          </p>
-          <h3 className="mt-1.5 text-lg font-semibold text-neutral-950">
-            {booking.customerName || "Brak danych klienta"}
-          </h3>
-        </div>
-        <StatusBadge status={booking.status} />
-      </div>
-
-      <label className="mt-4 block">
-        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Status realizacji
-        </span>
-        <select
-          value={
-            statusOptions.some((option) => option.value === booking.status)
-              ? booking.status
-              : "paid"
-          }
-          disabled={isPending}
-          onChange={(event) =>
-            onStatusChange(booking.id, event.target.value as BookingStatus)
-          }
-          className="h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm outline-none focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10 disabled:opacity-50"
-        >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {booking.referenceImageUrl ? (
-        <a
-          href={booking.referenceImageUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-5 block overflow-hidden rounded-md bg-neutral-950"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={booking.referenceImageUrl}
-            alt="Zdjęcie referencyjne klienta"
-            className="max-h-56 w-full object-contain"
-          />
-          <span className="flex items-center gap-2 border-t border-white/10 px-3 py-2 text-xs font-medium text-neutral-300">
-            <Camera size={14} aria-hidden="true" /> Otwórz zdjęcie referencyjne
-          </span>
-        </a>
-      ) : null}
-
-      <div className="mt-4 grid gap-2.5 border-y border-neutral-200 py-3 text-sm">
-        <DetailRow
-          icon={Package}
-          label="Wariant"
-          value={`${booking.rugTypeName || "Dywan"}${booking.rugSizeLabel ? ` · ${booking.rugSizeLabel}` : ""}`}
-        />
-        <DetailRow
-          icon={CalendarDays}
-          label="Termin"
-          value={formatDate(booking.bookingDate)}
-        />
-        <DetailRow
-          icon={CircleDollarSign}
-          label="Kwota"
-          value={formatPrice(booking.priceCents)}
-        />
-        <DetailRow
-          icon={Truck}
-          label="Dostawa"
-          value={getDeliveryLabel(booking.deliveryMethod)}
-        />
-        {booking.parcelLockerCode ? (
-          <DetailRow
-            icon={MapPin}
-            label="Paczkomat"
-            value={booking.parcelLockerCode}
-          />
-        ) : null}
-      </div>
-
-      <div className="space-y-2.5 pt-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Kontakt
-        </p>
-        {booking.customerEmail ? (
-          <a
-            href={`mailto:${booking.customerEmail}`}
-            className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950"
-          >
-            <Mail size={16} className="text-neutral-400" aria-hidden="true" />
-            <span className="truncate">{booking.customerEmail}</span>
-          </a>
-        ) : null}
-        {booking.customerPhone ? (
-          <a
-            href={`tel:${booking.customerPhone}`}
-            className="flex items-center gap-3 text-sm text-neutral-700 hover:text-neutral-950"
-          >
-            <Phone size={16} className="text-neutral-400" aria-hidden="true" />
-            {booking.customerPhone}
-          </a>
-        ) : null}
-        {booking.deliveryAddress ? (
-          <div className="flex items-start gap-3 text-sm leading-6 text-neutral-700">
-            <MapPin
-              size={16}
-              className="mt-1 shrink-0 text-neutral-400"
-              aria-hidden="true"
-            />
-            <span>{booking.deliveryAddress}</span>
-          </div>
-        ) : null}
-        {booking.customerName ? (
-          <div className="flex items-center gap-3 text-sm text-neutral-700">
-            <UserRound
-              size={16}
-              className="text-neutral-400"
-              aria-hidden="true"
-            />
-            {booking.customerName}
-          </div>
-        ) : null}
-      </div>
-
-      {booking.notes ? (
-        <div className="mt-4 rounded-md border border-neutral-200 bg-white p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Uwagi klienta
-          </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-700">
-            {booking.notes}
-          </p>
-        </div>
-      ) : null}
-    </aside>
+    <section className="mt-5 border-t border-[#e5e5e5] pt-5">
+      <h3 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#737373]">
+        {title}
+      </h3>
+      {children}
+    </section>
   );
 }
 
@@ -766,22 +987,38 @@ function DetailRow({
   icon: Icon,
   label,
   value,
+  href,
+  mono = false,
 }: {
-  icon: typeof Package;
+  icon: LucideIcon;
   label: string;
   value: string;
+  href?: string;
+  mono?: boolean;
 }) {
-  return (
-    <div className="flex items-center gap-3">
-      <Icon
-        size={16}
-        className="shrink-0 text-neutral-400"
-        aria-hidden="true"
-      />
-      <span className="text-neutral-500">{label}</span>
-      <span className="ml-auto max-w-[58%] truncate text-right font-medium text-neutral-800">
+  const content = (
+    <>
+      <p className="text-[11px] font-medium text-[#737373]">{label}</p>
+      <p className={`mt-1 break-words text-sm font-semibold leading-5 text-[#262626] ${mono ? "font-mono text-[11px]" : ""}`}>
         {value}
+      </p>
+    </>
+  );
+
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-[#f5f5f5] text-[#737373]">
+        <Icon size={15} aria-hidden="true" />
       </span>
+      <div className="min-w-0 flex-1">
+        {href ? (
+          <a href={href} className="block hover:text-neutral-950">
+            {content}
+          </a>
+        ) : (
+          content
+        )}
+      </div>
     </div>
   );
 }
