@@ -6,7 +6,9 @@ export const bookingSchema = z.object({
   customerPhone: z.string().max(500).optional(),
   customerNotes: z.string().max(500).optional(),
   pickedSize: z.number().min(1).max(10),
-  pickupDate: z.string().min(1, "Wybierz termin"),
+  pickupDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Wybierz prawidłowy termin"),
   deliveryMethod: z.enum(["parcel_locker", "courier"], {
     error: "Wybierz metodę wysyłki",
   }),

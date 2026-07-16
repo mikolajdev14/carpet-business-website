@@ -122,7 +122,10 @@ export default async function AdminDashboardPage() {
             </p>
           </div>
 
-          <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Panel administracyjny">
+          <nav
+            className="flex-1 space-y-1 px-3 py-5"
+            aria-label="Panel administracyjny"
+          >
             <a
               href="#overview"
               className="flex h-10 items-center gap-3 rounded-md bg-[#ffe44c] px-3 text-sm font-semibold text-neutral-950"
@@ -159,8 +162,12 @@ export default async function AdminDashboardPage() {
                 {user.email?.slice(0, 1).toUpperCase() || "A"}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-[#0a0a0a]">Administrator</p>
-                <p className="truncate text-[11px] text-[#737373]">{user.email}</p>
+                <p className="text-xs font-semibold text-[#0a0a0a]">
+                  Administrator
+                </p>
+                <p className="truncate text-[11px] text-[#737373]">
+                  {user.email}
+                </p>
               </div>
               <LogoutButton compact />
             </div>
@@ -172,10 +179,14 @@ export default async function AdminDashboardPage() {
             <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-3">
                 <div className="lg:hidden">
-                  <p className="font-lobster text-xl text-neutral-950">Carpetiem</p>
+                  <p className="font-lobster text-xl text-neutral-950">
+                    Carpetiem
+                  </p>
                 </div>
                 <div className="hidden lg:block">
-                  <p className="text-sm font-semibold text-[#0a0a0a]">Panel administracyjny</p>
+                  <p className="text-sm font-semibold text-[#0a0a0a]">
+                    Panel administracyjny
+                  </p>
                   <p className="text-xs text-[#737373]">Zarządzanie studiem</p>
                 </div>
               </div>
@@ -191,17 +202,36 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
 
-            <nav className="flex gap-1 overflow-x-auto border-t border-[#e5e5e5] px-3 py-2 lg:hidden" aria-label="Sekcje panelu">
-              <a href="#overview" className="whitespace-nowrap rounded-md bg-[#ffe44c] px-3 py-1.5 text-xs font-semibold text-neutral-950">Pulpit</a>
-              <a href="#orders" className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]">Zamówienia</a>
-              <a href="#calendar" className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]">Kalendarz</a>
+            <nav
+              className="flex gap-1 overflow-x-auto border-t border-[#e5e5e5] px-3 py-2 lg:hidden"
+              aria-label="Sekcje panelu"
+            >
+              <a
+                href="#overview"
+                className="whitespace-nowrap rounded-md bg-[#ffe44c] px-3 py-1.5 text-xs font-semibold text-neutral-950"
+              >
+                Pulpit
+              </a>
+              <a
+                href="#orders"
+                className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]"
+              >
+                Zamówienia
+              </a>
+              <a
+                href="#calendar"
+                className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-[#525252]"
+              >
+                Kalendarz
+              </a>
             </nav>
           </header>
 
           <main className="w-full px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
             {bookingsError || blockedError ? (
               <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                Nie udało się pobrać wszystkich danych panelu. Sprawdź połączenie z Supabase.
+                Nie udało się pobrać wszystkich danych panelu. Sprawdź
+                połączenie z Supabase.
               </div>
             ) : null}
 

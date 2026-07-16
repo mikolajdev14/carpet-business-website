@@ -23,17 +23,8 @@ export const CustomerForm = ({ booking, setBooking }: CustomerFormProps) => {
 
   return (
     <section className="space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">
-          Dane kontaktowe
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Podaj dane potrzebne do potwierdzenia zamówienia.
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="space-y-2 sm:col-span-2">
+      <div className="grid gap-4 md:grid-cols-3">
+        <label className="space-y-2">
           <span className="text-sm font-medium text-neutral-700">
             Imię i nazwisko *
           </span>
@@ -73,7 +64,7 @@ export const CustomerForm = ({ booking, setBooking }: CustomerFormProps) => {
           />
         </label>
 
-        <label className="space-y-2 sm:col-span-2">
+        <label className="space-y-2 md:col-span-3">
           <span className="text-sm font-medium text-neutral-700">
             Uwagi do zamówienia
           </span>

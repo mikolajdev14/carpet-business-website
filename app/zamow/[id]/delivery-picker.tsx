@@ -45,13 +45,6 @@ export const DeliveryPicker = ({
 
   return (
     <section className="space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">Metoda wysyłki</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Wybierz, gdzie mamy wysłać gotowy dywan.
-        </p>
-      </div>
-
       <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option) => {
           const isSelected = booking.deliveryMethod === option.value;

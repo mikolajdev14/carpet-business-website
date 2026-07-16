@@ -142,7 +142,9 @@ export default function AdminDashboardClient({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [blockedDates, setBlockedDates] = useState(initialBlockedDates);
-  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [actionMessage, setActionMessage] = useState<string>();
@@ -254,9 +256,7 @@ export default function AdminDashboardClient({
   const activeCalendarDate = hoveredCalendarDate ?? selectedCalendarDate;
   const calendarBookings = useMemo(
     () =>
-      bookings.filter(
-        (booking) => booking.bookingDate === activeCalendarDate,
-      ),
+      bookings.filter((booking) => booking.bookingDate === activeCalendarDate),
     [activeCalendarDate, bookings],
   );
 
@@ -397,7 +397,9 @@ export default function AdminDashboardClient({
                 Aktualny stan zamówień i terminów.
               </p>
             </div>
-            <p className="text-xs font-medium text-[#737373]">Dane aktualne teraz</p>
+            <p className="text-xs font-medium text-[#737373]">
+              Dane aktualne teraz
+            </p>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -434,7 +436,9 @@ export default function AdminDashboardClient({
           <div className="border-b border-[#e5e5e5] px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-[#0a0a0a]">Historia zamówień</h2>
+                <h2 className="text-lg font-semibold text-[#0a0a0a]">
+                  Historia zamówień
+                </h2>
                 <p className="mt-0.5 text-xs text-[#737373]">
                   {filteredBookings.length} z {bookings.length} rekordów
                 </p>
@@ -495,7 +499,9 @@ export default function AdminDashboardClient({
                       onClick={() => setSelectedBookingId(booking.id)}
                       className="grid w-full grid-cols-[72px_minmax(220px,1.5fr)_120px_140px_120px_110px_28px] items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-[#fffde7] focus-visible:bg-[#fffde7] focus-visible:outline-none"
                     >
-                      <span className="text-xs font-semibold text-[#525252]">#{booking.id}</span>
+                      <span className="text-xs font-semibold text-[#525252]">
+                        #{booking.id}
+                      </span>
                       <span className="flex min-w-0 items-center gap-3">
                         <BookingAvatar booking={booking} />
                         <span className="min-w-0">
@@ -503,7 +509,8 @@ export default function AdminDashboardClient({
                             {booking.customerName || "Klient bez nazwy"}
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-[#737373]">
-                            {booking.rugTypeName || "Dywan"} · {booking.rugSizeLabel || "brak rozmiaru"}
+                            {booking.rugTypeName || "Dywan"} ·{" "}
+                            {booking.rugSizeLabel || "brak rozmiaru"}
                           </span>
                         </span>
                       </span>
@@ -511,14 +518,22 @@ export default function AdminDashboardClient({
                         {formatShortDate(booking.bookingDate)}
                       </span>
                       <span className="flex items-center gap-2 text-xs text-[#525252]">
-                        <Truck size={14} className="text-[#a3a3a3]" aria-hidden="true" />
+                        <Truck
+                          size={14}
+                          className="text-[#a3a3a3]"
+                          aria-hidden="true"
+                        />
                         {getDeliveryLabel(booking.deliveryMethod)}
                       </span>
                       <StatusBadge status={booking.status} />
                       <span className="text-right text-sm font-semibold text-[#0a0a0a]">
                         {formatPrice(booking.priceCents)}
                       </span>
-                      <ChevronRight size={16} className="text-[#a3a3a3]" aria-hidden="true" />
+                      <ChevronRight
+                        size={16}
+                        className="text-[#a3a3a3]"
+                        aria-hidden="true"
+                      />
                     </button>
                   ))}
                 </div>
@@ -541,14 +556,19 @@ export default function AdminDashboardClient({
                         <StatusBadge status={booking.status} />
                       </span>
                       <span className="mt-1 block truncate text-xs text-[#737373]">
-                        #{booking.id} · {booking.rugTypeName || "Dywan"} · {formatShortDate(booking.bookingDate)}
+                        #{booking.id} · {booking.rugTypeName || "Dywan"} ·{" "}
+                        {formatShortDate(booking.bookingDate)}
                       </span>
                     </span>
                     <span className="shrink-0 text-right">
                       <span className="block text-xs font-semibold text-[#0a0a0a]">
                         {formatPrice(booking.priceCents)}
                       </span>
-                      <ChevronRight size={16} className="ml-auto mt-1 text-[#a3a3a3]" aria-hidden="true" />
+                      <ChevronRight
+                        size={16}
+                        className="ml-auto mt-1 text-[#a3a3a3]"
+                        aria-hidden="true"
+                      />
                     </span>
                   </button>
                 ))}
@@ -570,17 +590,24 @@ export default function AdminDashboardClient({
           <div className="flex flex-col justify-between gap-3 border-b border-[#e5e5e5] px-4 py-4 sm:flex-row sm:items-end sm:px-5">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-semibold text-[#0a0a0a]">
-                <CalendarDays size={19} className="text-neutral-950" aria-hidden="true" />
+                <CalendarDays
+                  size={19}
+                  className="text-neutral-950"
+                  aria-hidden="true"
+                />
                 Kalendarz realizacji
               </h2>
-              <p className="mt-1 text-xs text-[#737373]">Plan zamówień i dni wolnych</p>
+              <p className="mt-1 text-xs text-[#737373]">
+                Plan zamówień i dni wolnych
+              </p>
             </div>
             <div className="flex flex-wrap gap-4 text-xs text-[#525252]">
               <span className="inline-flex items-center gap-2">
                 <span className="size-2 rounded-full bg-[#e0bd00]" /> Zamówienie
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="size-2 rounded-full bg-[#0a0a0a]" /> Dzień wolny
+                <span className="size-2 rounded-full bg-[#0a0a0a]" /> Dzień
+                wolny
               </span>
             </div>
           </div>
@@ -641,7 +668,11 @@ export default function AdminDashboardClient({
                           </span>
                         </span>
                         <StatusBadge status={booking.status} />
-                        <ChevronRight size={15} className="shrink-0 text-[#a3a3a3]" aria-hidden="true" />
+                        <ChevronRight
+                          size={15}
+                          className="shrink-0 text-[#a3a3a3]"
+                          aria-hidden="true"
+                        />
                       </button>
                     ))}
                   </div>
@@ -654,8 +685,12 @@ export default function AdminDashboardClient({
 
               <div className="p-4 sm:p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-[#0a0a0a]">Dni wolne</p>
-                  <span className="text-xs font-medium text-[#737373]">{blockedDates.length}</span>
+                  <p className="text-sm font-semibold text-[#0a0a0a]">
+                    Dni wolne
+                  </p>
+                  <span className="text-xs font-medium text-[#737373]">
+                    {blockedDates.length}
+                  </span>
                 </div>
                 {blockedDates.length ? (
                   <div className="mt-3 max-h-48 space-y-1.5 overflow-y-auto">
@@ -664,11 +699,15 @@ export default function AdminDashboardClient({
                         key={date}
                         className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-[#e5e5e5]"
                       >
-                        <span className="text-xs font-medium text-[#525252]">{formatDate(date)}</span>
+                        <span className="text-xs font-medium text-[#525252]">
+                          {formatDate(date)}
+                        </span>
                         <button
                           type="button"
                           disabled={isPending}
-                          onClick={() => handleToggleBlockedDate(parseDateKey(date))}
+                          onClick={() =>
+                            handleToggleBlockedDate(parseDateKey(date))
+                          }
                           className="rounded px-1.5 py-1 text-[11px] font-semibold text-neutral-950 hover:bg-[#ffe44c] disabled:opacity-50"
                         >
                           Odblokuj
@@ -677,7 +716,9 @@ export default function AdminDashboardClient({
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-[#737373]">Brak zablokowanych terminów.</p>
+                  <p className="mt-3 text-sm text-[#737373]">
+                    Brak zablokowanych terminów.
+                  </p>
                 )}
               </div>
             </div>
@@ -728,7 +769,9 @@ function StatCard({
           <p className="text-xs font-medium text-[#737373]">{label}</p>
           <p className="mt-2 text-2xl font-semibold text-[#0a0a0a]">{value}</p>
         </div>
-        <span className={`flex size-9 items-center justify-center rounded-md ${toneClass}`}>
+        <span
+          className={`flex size-9 items-center justify-center rounded-md ${toneClass}`}
+        >
           <Icon size={18} aria-hidden="true" />
         </span>
       </div>
@@ -756,10 +799,14 @@ function FilterTab({
       }`}
     >
       {label}
-      <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-[#ffe44c]" : "bg-[#f5f5f5]"}`}>
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-[#ffe44c]" : "bg-[#f5f5f5]"}`}
+      >
         {count}
       </span>
-      {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[#ffe44c]" /> : null}
+      {active ? (
+        <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[#ffe44c]" />
+      ) : null}
     </button>
   );
 }
@@ -777,7 +824,11 @@ function BookingAvatar({
     >
       {booking.referenceImageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={booking.referenceImageUrl} alt="" className="size-full object-cover" />
+        <img
+          src={booking.referenceImageUrl}
+          alt=""
+          className="size-full object-cover"
+        />
       ) : (
         (booking.customerName || `#${booking.id}`).slice(0, 1).toUpperCase()
       )}
@@ -848,7 +899,10 @@ function BookingDrawer({
               </p>
               <StatusBadge status={booking.status} />
             </div>
-            <h2 id="booking-drawer-title" className="mt-1.5 truncate text-xl font-semibold text-[#0a0a0a]">
+            <h2
+              id="booking-drawer-title"
+              className="mt-1.5 truncate text-xl font-semibold text-[#0a0a0a]"
+            >
               {booking.customerName || "Klient bez nazwy"}
             </h2>
           </div>
@@ -866,16 +920,23 @@ function BookingDrawer({
         <div className="flex-1 overflow-y-auto px-4 pb-8 sm:px-6">
           <div className="sticky top-0 z-10 -mx-4 border-b border-[#e5e5e5] bg-white px-4 py-3 sm:-mx-6 sm:px-6">
             <label className="flex items-center justify-between gap-4">
-              <span className="text-xs font-semibold text-[#525252]">Status realizacji</span>
+              <span className="text-xs font-semibold text-[#525252]">
+                Status realizacji
+              </span>
               <select
                 value={
-                  statusOptions.some((option) => option.value === booking.status)
+                  statusOptions.some(
+                    (option) => option.value === booking.status,
+                  )
                     ? booking.status
                     : "paid"
                 }
                 disabled={isPending}
                 onChange={(event) =>
-                  onStatusChange(booking.id, event.target.value as BookingStatus)
+                  onStatusChange(
+                    booking.id,
+                    event.target.value as BookingStatus,
+                  )
                 }
                 className="h-9 min-w-40 rounded-md border border-[#d4d4d4] bg-[#fafafa] px-3 text-xs font-semibold text-[#0a0a0a] outline-none focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10 disabled:opacity-50"
               >
@@ -902,7 +963,8 @@ function BookingDrawer({
                 className="max-h-64 w-full object-contain"
               />
               <span className="flex items-center gap-2 border-t border-white/10 px-3 py-2 text-xs font-medium text-white/75">
-                <Camera size={14} aria-hidden="true" /> Otwórz zdjęcie referencyjne
+                <Camera size={14} aria-hidden="true" /> Otwórz zdjęcie
+                referencyjne
               </span>
             </a>
           ) : (
@@ -914,39 +976,79 @@ function BookingDrawer({
 
           <DetailSection title="Szczegóły zlecenia">
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailRow icon={Package} label="Wariant" value={booking.rugTypeName || "Dywan"} />
-              <DetailRow icon={Package} label="Rozmiar" value={booking.rugSizeLabel || "Brak danych"} />
-              <DetailRow icon={CalendarDays} label="Termin wykonania" value={formatDate(booking.bookingDate)} />
-              <DetailRow icon={CircleDollarSign} label="Kwota" value={formatPrice(booking.priceCents)} />
+              <DetailRow
+                icon={Package}
+                label="Wariant"
+                value={booking.rugTypeName || "Dywan"}
+              />
+              <DetailRow
+                icon={Package}
+                label="Rozmiar"
+                value={booking.rugSizeLabel || "Brak danych"}
+              />
+              <DetailRow
+                icon={CalendarDays}
+                label="Termin wykonania"
+                value={formatDate(booking.bookingDate)}
+              />
+              <DetailRow
+                icon={CircleDollarSign}
+                label="Kwota"
+                value={formatPrice(booking.priceCents)}
+              />
             </div>
           </DetailSection>
 
           <DetailSection title="Dostawa">
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailRow icon={Truck} label="Metoda" value={getDeliveryLabel(booking.deliveryMethod)} />
+              <DetailRow
+                icon={Truck}
+                label="Metoda"
+                value={getDeliveryLabel(booking.deliveryMethod)}
+              />
               {booking.deliveryMethod === "parcel_locker" ? (
-                <DetailRow icon={MapPin} label="Paczkomat InPost" value={booking.parcelLockerCode || "Brak danych"} />
+                <DetailRow
+                  icon={MapPin}
+                  label="Paczkomat InPost"
+                  value={booking.parcelLockerCode || "Brak danych"}
+                />
               ) : null}
               {booking.deliveryMethod === "courier" ? (
-                <DetailRow icon={MapPin} label="Adres kuriera" value={booking.deliveryAddress || "Brak danych"} />
+                <DetailRow
+                  icon={MapPin}
+                  label="Adres kuriera"
+                  value={booking.deliveryAddress || "Brak danych"}
+                />
               ) : null}
             </div>
           </DetailSection>
 
           <DetailSection title="Dane klienta">
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailRow icon={UserRound} label="Imię i nazwisko" value={booking.customerName || "Brak danych"} />
+              <DetailRow
+                icon={UserRound}
+                label="Imię i nazwisko"
+                value={booking.customerName || "Brak danych"}
+              />
               <DetailRow
                 icon={Mail}
                 label="E-mail"
                 value={booking.customerEmail || "Brak danych"}
-                href={booking.customerEmail ? `mailto:${booking.customerEmail}` : undefined}
+                href={
+                  booking.customerEmail
+                    ? `mailto:${booking.customerEmail}`
+                    : undefined
+                }
               />
               <DetailRow
                 icon={Phone}
                 label="Telefon"
                 value={booking.customerPhone || "Brak danych"}
-                href={booking.customerPhone ? `tel:${booking.customerPhone}` : undefined}
+                href={
+                  booking.customerPhone
+                    ? `tel:${booking.customerPhone}`
+                    : undefined
+                }
               />
             </div>
           </DetailSection>
@@ -959,11 +1061,33 @@ function BookingDrawer({
 
           <DetailSection title="Płatność i system">
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailRow icon={Clock3} label="Utworzono" value={formatDateTime(booking.createdAt)} />
-              <DetailRow icon={Clock3} label="Ostatnia zmiana" value={formatDateTime(booking.updatedAt)} />
-              <DetailRow icon={Clock3} label="Wygasa" value={formatDateTime(booking.expiresAt)} />
-              <DetailRow icon={CircleDollarSign} label="Stripe session ID" value={booking.stripeSessionId || "Brak danych"} mono />
-              <DetailRow icon={CircleDollarSign} label="Payment intent ID" value={booking.stripePaymentIntentId || "Brak danych"} mono />
+              <DetailRow
+                icon={Clock3}
+                label="Utworzono"
+                value={formatDateTime(booking.createdAt)}
+              />
+              <DetailRow
+                icon={Clock3}
+                label="Ostatnia zmiana"
+                value={formatDateTime(booking.updatedAt)}
+              />
+              <DetailRow
+                icon={Clock3}
+                label="Wygasa"
+                value={formatDateTime(booking.expiresAt)}
+              />
+              <DetailRow
+                icon={CircleDollarSign}
+                label="Stripe session ID"
+                value={booking.stripeSessionId || "Brak danych"}
+                mono
+              />
+              <DetailRow
+                icon={CircleDollarSign}
+                label="Payment intent ID"
+                value={booking.stripePaymentIntentId || "Brak danych"}
+                mono
+              />
             </div>
           </DetailSection>
         </div>
@@ -972,7 +1096,13 @@ function BookingDrawer({
   );
 }
 
-function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+function DetailSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className="mt-5 border-t border-[#e5e5e5] pt-5">
       <h3 className="mb-4 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#737373]">
@@ -999,7 +1129,9 @@ function DetailRow({
   const content = (
     <>
       <p className="text-[11px] font-medium text-[#737373]">{label}</p>
-      <p className={`mt-1 break-words text-sm font-semibold leading-5 text-[#262626] ${mono ? "font-mono text-[11px]" : ""}`}>
+      <p
+        className={`mt-1 break-words text-sm font-semibold leading-5 text-[#262626] ${mono ? "font-mono text-[11px]" : ""}`}
+      >
         {value}
       </p>
     </>

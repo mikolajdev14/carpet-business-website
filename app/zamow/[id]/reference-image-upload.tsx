@@ -59,16 +59,6 @@ export const ReferenceImageUpload = ({
 
   return (
     <section className="space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-neutral-950">
-          Zdjęcie przedmiotu
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Dodaj zdjęcie przedmiotu, na podstawie którego ma powstać dywan.
-          Pole jest opcjonalne.
-        </p>
-      </div>
-
       <div className="rounded-md border border-dashed border-neutral-300 bg-neutral-50 p-4">
         <input
           ref={inputRef}

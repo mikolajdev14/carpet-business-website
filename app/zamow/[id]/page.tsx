@@ -1,14 +1,23 @@
 "use client";
 
-import { FormEvent, use, useEffect, useState } from "react";
-import { SizePicker } from "./size-picker";
+import { createClient } from "@/lib/supabase/client";
+import { formatLocalDateKey } from "@/lib/booking-date";
+import { bookingSchema } from "@/schema/booking";
+import { ArrowLeft, CreditCard, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import {
+  type FormEvent,
+  type ReactNode,
+  use,
+  useEffect,
+  useState,
+} from "react";
+import { createCheckoutSession, uploadReferenceImage } from "./actions";
+import { CustomerForm } from "./customer-form";
 import { DatePicker } from "./date-picker";
 import { DeliveryPicker } from "./delivery-picker";
 import { ReferenceImageUpload } from "./reference-image-upload";
-import { CustomerForm } from "./customer-form";
-import { createClient } from "@/lib/supabase/client";
-import { bookingSchema } from "@/schema/booking";
-import { createCheckoutSession, uploadReferenceImage } from "./actions";
+import { SizePicker } from "./size-picker";
 
 export type DeliveryMethod = "parcel_locker" | "courier";
 
@@ -25,6 +34,12 @@ export type Booking = {
   deliveryAddress: string;
 };
 
+type RugTypeSummary = {
+  name: string;
+  description: string | null;
+  lead_time_days: number | null;
+};
+
 export default function ProductPage({
   params,
 }: {
@@ -32,9 +47,8 @@ export default function ProductPage({
 }) {
   const { id } = use(params);
   const [blockedDays, setBlockedDays] = useState<Date[]>([]);
-  const [submitMessage, setSubmitMessage] = useState<string | undefined>(
-    undefined,
-  );
+  const [rugType, setRugType] = useState<RugTypeSummary | null>(null);
+  const [submitMessage, setSubmitMessage] = useState<string>();
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [booking, setBooking] = useState<Booking>({
@@ -54,32 +68,40 @@ export default function ProductPage({
     let isMounted = true;
     const supabase = createClient();
 
-    supabase
-      .from("blocked_dates")
-      .select("date")
-      .then(({ data: blockedDates }) => {
-        if (!isMounted) {
-          return;
-        }
+    const loadPageData = async () => {
+      const [{ data: blockedDates }, { data: selectedRugType }] =
+        await Promise.all([
+          supabase.from("blocked_dates").select("date"),
+          supabase
+            .from("rug_types")
+            .select("name, description, lead_time_days")
+            .eq("id", id)
+            .single(),
+        ]);
 
-        setBlockedDays(blockedDates?.map((item) => new Date(item.date)) ?? []);
-      });
+      if (!isMounted) return;
+
+      setBlockedDays(blockedDates?.map((item) => new Date(item.date)) ?? []);
+      setRugType(selectedRugType);
+    };
+
+    void loadPageData();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [id]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
 
     const bookingInput = {
       ...booking,
-      pickupDate: booking.pickupDate?.toISOString() ?? "",
+      pickupDate: booking.pickupDate
+        ? formatLocalDateKey(booking.pickupDate)
+        : "",
       referenceImagePath: undefined,
     };
 
@@ -135,76 +157,172 @@ export default function ProductPage({
     }
   };
 
+  const selectedDate = booking.pickupDate
+    ? new Intl.DateTimeFormat("pl-PL", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(booking.pickupDate)
+    : "Nie wybrano";
+
+  const selectedDelivery =
+    booking.deliveryMethod === "parcel_locker"
+      ? "Paczkomat InPost"
+      : booking.deliveryMethod === "courier"
+        ? "Kurier"
+        : "Nie wybrano";
+
   return (
     <main className="min-h-screen bg-neutral-50 text-neutral-950">
-      <section className="mx-auto grid w-full max-w-6xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-12">
-        <aside className="h-fit rounded-lg border border-neutral-200 bg-white p-6 lg:sticky lg:top-8">
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">
-            Zamówienie
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl">
-            Skonfiguruj swój dywan
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-neutral-600">
-            Wybierz rozmiar, dogodny termin realizacji i zostaw dane kontaktowe.
-            Następnie wybierzesz sposób dostawy i opłacisz zamówienie.
-          </p>
+      <header className="border-b border-neutral-200 bg-neutral-50">
+        <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
+          <Link href="/" className="font-lobster text-2xl text-neutral-950">
+            Carpetiem
+          </Link>
+          <Link
+            href="/zamow"
+            className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-950"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            Zmień wariant
+          </Link>
+        </div>
+      </header>
 
-          <div className="mt-8 space-y-4 border-t border-neutral-200 pt-6">
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Wybrany wariant
-              </span>
-              <p className="mt-1 text-base font-medium text-neutral-950">
-                ID produktu: {id}
-              </p>
-            </div>
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                Następny krok
-              </span>
-              <p className="mt-1 text-sm text-neutral-600">
-                Uzupełnij dane, wybierz dostawę i przejdź do płatności.
-              </p>
-            </div>
+      <section className="bg-neutral-950 text-white">
+        <div className="mx-auto flex w-full max-w-7xl flex-col justify-between gap-5 px-5 py-7 sm:px-8 sm:py-9 lg:flex-row lg:items-end lg:px-10">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#ffe44c]">
+              Zamówienie
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+              Skonfiguruj swój dywan
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-neutral-300">
+              {rugType?.description ||
+                "Wybierz szczegóły projektu, termin oraz sposób dostawy."}
+            </p>
           </div>
-        </aside>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg border border-neutral-200 bg-white p-5 sm:p-7"
-        >
-          <div className="grid gap-8">
-            <SizePicker id={id} booking={booking} setBooking={setBooking} />
-            <DatePicker blockedDates={blockedDays} setBooking={setBooking} />
-            <DeliveryPicker booking={booking} setBooking={setBooking} />
-            <ReferenceImageUpload
-              file={referenceImage}
-              setFile={setReferenceImage}
-            />
+          <div className="border-l border-white/20 pl-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
+              Wybrany wariant
+            </p>
+            <p className="mt-1 text-base font-semibold text-white">
+              {rugType?.name || `Wariant #${id}`}
+            </p>
+            {rugType?.lead_time_days ? (
+              <p className="mt-0.5 text-xs text-neutral-400">
+                Około {rugType.lead_time_days} dni realizacji
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto w-full max-w-7xl px-5 py-5 sm:px-8 sm:py-7 lg:px-10 lg:py-8"
+      >
+        <div className="grid items-start gap-5 xl:grid-cols-2">
+          <FormPanel number="1" title="Projekt i termin" description="Wybierz rozmiar oraz dzień realizacji">
+            <div className="grid gap-7">
+              <SizePicker id={id} booking={booking} setBooking={setBooking} />
+              <DatePicker blockedDates={blockedDays} setBooking={setBooking} />
+            </div>
+          </FormPanel>
+
+          <div className="grid gap-5">
+            <FormPanel number="2" title="Dostawa" description="Wskaż sposób odbioru gotowego dywanu">
+              <DeliveryPicker booking={booking} setBooking={setBooking} />
+            </FormPanel>
+
+            <FormPanel number="3" title="Materiał referencyjny" description="Dodaj zdjęcie, które będzie podstawą projektu">
+              <ReferenceImageUpload
+                file={referenceImage}
+                setFile={setReferenceImage}
+              />
+            </FormPanel>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <FormPanel number="4" title="Dane zamawiającego" description="Dane kontaktowe i dodatkowe informacje">
             <CustomerForm booking={booking} setBooking={setBooking} />
-          </div>
+          </FormPanel>
+        </div>
 
-          <div className="mt-8 flex flex-col gap-3 border-t border-neutral-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            {submitMessage ? (
-              <p className="text-sm font-medium text-neutral-700">
-                {submitMessage}
+        <div className="sticky bottom-3 z-20 mt-5 rounded-lg border border-neutral-300 bg-white/95 p-4 shadow-[0_12px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              {submitMessage ? (
+                <p className="text-sm font-semibold text-neutral-950">
+                  {submitMessage}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-neutral-500">
+                  <span>
+                    Rozmiar:{" "}
+                    <strong className="text-neutral-800">
+                      {booking.pickedSize ? "Wybrany" : "Nie wybrano"}
+                    </strong>
+                  </span>
+                  <span>
+                    Termin:{" "}
+                    <strong className="text-neutral-800">{selectedDate}</strong>
+                  </span>
+                  <span>
+                    Dostawa:{" "}
+                    <strong className="text-neutral-800">
+                      {selectedDelivery}
+                    </strong>
+                  </span>
+                </div>
+              )}
+              <p className="mt-2 flex items-center gap-2 text-xs text-neutral-500">
+                <ShieldCheck size={14} aria-hidden="true" />
+                Bezpieczna płatność online przez Stripe
               </p>
-            ) : (
-              <p className="text-sm text-neutral-500">
-                Pola z gwiazdką są wymagane.
-              </p>
-            )}
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex h-11 items-center justify-center rounded-md bg-neutral-950 px-6 text-sm font-semibold text-[#ffe44c] transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+              className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-neutral-950 px-6 text-sm font-semibold text-[#ffe44c] transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-wait disabled:opacity-70"
             >
+              <CreditCard size={17} aria-hidden="true" />
               {isSubmitting ? "Przygotowywanie..." : "Zapłać i zarezerwuj"}
             </button>
           </div>
-        </form>
-      </section>
+        </div>
+      </form>
     </main>
+  );
+}
+
+function FormPanel({
+  number,
+  title,
+  description,
+  children,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5 sm:p-6">
+      <div className="mb-6 flex items-center gap-3 border-b border-neutral-200 pb-4">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#ffe44c] text-xs font-bold text-neutral-950">
+          {number}
+        </span>
+        <div>
+          <h2 className="text-base font-semibold text-neutral-950">{title}</h2>
+          <p className="text-xs text-neutral-500">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
   );
 }

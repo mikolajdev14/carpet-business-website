@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isValidDateKey } from "@/lib/booking-date";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe";
 
@@ -64,6 +65,7 @@ export async function fulfillCheckout(
     !metadata.customerName ||
     !customerEmail ||
     !bookingDate ||
+    !isValidDateKey(bookingDate) ||
     session.amount_total == null
   ) {
     console.error("Sesja Stripe nie zawiera kompletnych danych zamówienia:", {
